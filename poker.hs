@@ -78,3 +78,14 @@ type Hand = [Card]
 
 rank :: Hand -> Int
 rank _ = 0
+
+-- "8C TS KC 9H 4S 7D 2S 5D 3S AC"
+compareHands :: String -> Bool
+compareHands _ = True
+
+
+main = do
+    fileContents <- readFile "poker.txt"
+    let hands = lines fileContents
+    let w = map compareHands hands
+    print w
