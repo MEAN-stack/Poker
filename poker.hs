@@ -80,12 +80,16 @@ rank :: Hand -> Int
 rank _ = 0
 
 -- "8C TS KC 9H 4S 7D 2S 5D 3S AC"
+readHands :: String -> (Hand, Hand)
+readHands s = (map read $ take 5 ws, map read $ drop 5 ws)
+              where ws = words s
+
 compareHands :: String -> Bool
-compareHands _ = True
+compareHands s = let (h1, h2) = readHands s in
+                     h1 > h2
 
 
 main = do
     fileContents <- readFile "poker.txt"
-    let hands = lines fileContents
-    let w = map compareHands hands
-    print w
+    let games = lines fileContents
+    print $ length $ filter compareHands games
