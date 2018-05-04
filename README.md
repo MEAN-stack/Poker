@@ -23,26 +23,22 @@ If two players have the same ranked hands then the rank made up of the highest v
 Consider the following five hands dealt to two players:
 
 ```bash
-Hand  Player 1         Player 2        Winner
-------------------------------------------------
-1	  5H 5C 6S 7S KD    2C 3S 8S 8D TD       Player 2
+Hand  Player 1          Player 2              Winner
+--------------------------------------------------------
+1     5H 5C 6S 7S KD    2C 3S 8S 8D TD        Player 2
       Pair of Fives     Pair of Eights
  	
 2     5D 8C 9S JS AC    2C 5C 7D 8S QH
-      Highest card Ace  Highest card Queen   Player 1
+      Highest card Ace  Highest card Queen    Player 1
 
 3     2D 9C AS AH AC    3D 6D 7D TD QD
-      Three Aces        Flush with Diamonds  Player 2
+      Three Aces        Flush with Diamonds   Player 2
 
 4     4D 6S 9H QH QC    3D 6D 7H QD QS
       Pair of Queens    Pair of Queens
-      Highest card Nine Highest card Seven   Player 1
+      Highest card Nine Highest card Seven    Player 1
 
-5     2H 2D 4C 4D 4S
-      Full House
-With Three Fours
- 	3C 3D 3S 9S 9D
-Full House
-with Three Threes
- 	Player 1
+5     2H 2D 4C 4D 4S    3C 3D 3S 9S 9D        Player 1
+      Full House        Full House
+      With Three Fours  with Three Threes
 ```
