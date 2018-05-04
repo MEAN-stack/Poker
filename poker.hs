@@ -1,9 +1,9 @@
 import Data.Function
 import Data.List
 
-data Rank = Two | Three | Four | Five | Six | Seven | Eight | Nine | Ten | Jack | Queen | King | Ace deriving (Eq, Ord, Bounded, Enum)
+data Value = Two | Three | Four | Five | Six | Seven | Eight | Nine | Ten | Jack | Queen | King | Ace deriving (Eq, Ord, Bounded, Enum)
 
-instance Show Rank where
+instance Show Value where
     show Two   = "2"
     show Three = "3"
     show Four  = "4"
@@ -18,7 +18,7 @@ instance Show Rank where
     show King  = "K"
     show Ace   = "A"
 
-instance Read Rank where
+instance Read Value where
     readsPrec _ (x:xs) = case x of
                              '2' -> [(Two, xs)]
                              '3' -> [(Three, xs)]
@@ -54,7 +54,7 @@ instance Read Suit where
 
 
 
-type Card' = (Rank, Suit)
+type Card' = (Value, Suit)
 
 newtype Card = C Card' deriving (Eq)
 
@@ -62,9 +62,9 @@ instance Show Card where
     show (C (r, s)) = show r ++ show s
 
 instance Read Card where
-    readsPrec _ (xs) =  let readRank x = reads x :: [(Rank, String)]
+    readsPrec _ (xs) =  let readValue x = reads x :: [(Value, String)]
                             readSuit x = reads x :: [(Suit, String)] in
-                                case readRank xs of
+                                case readValue xs of
                                     [] -> []
                                     (r,ys):_ -> case readSuit ys of
                                        [] -> []
@@ -76,18 +76,86 @@ instance Ord Card where
 
 type Hand = [Card]
 
-rank :: Hand -> Int
-rank _ = 0
+-- get the rank of a hand
+-- highCard < onePair < twoPairs < threeOfAKind < straight < flush < fullHouse < fourOfAKind < straightFlush < royalFlush
 
+data Rank = HighCard
+            | OnePair
+            | TwoPairs 
+            | ThreeOfAKind 
+            | Straight 
+            | Flush 
+            | FullHouse 
+            | FourOfAKind 
+            | StraightFlush 
+            | RoyalFlush deriving (Eq, Ord)
+
+rank :: Hand -> Rank
+rank h
+    | isRoyalFlush h = RoyalFlush
+    | isStraightFlush h = StraightFlush
+    | isFourOfAKind h = FourOfAKind
+    | isFullHouse h = FullHouse
+    | isFlush h = Flush
+    | isStraight h = Straight
+    | isThreeOfAKind h = ThreeOfAKind
+    | isTwoPairs h = TwoPairs
+    | isOnePair h = OnePair
+    | isHighCard h = HighCard
+    | otherwise = HighCard
+
+isFlush :: Hand -> Bool
+isFlush h = 1 == (length $ nub $ map getSuit h)
+
+isFourOfAKind :: Hand -> Bool
+isFourOfAKind h = (2 == length xs) && ((1 == length x) || (4 == length x))
+                  where xs = group $ sort $ map getValue h
+                        x = head xs
+
+isThreeOfAKind :: Hand -> Bool
+isThreeOfAKind h = (2 == length xs) && ((2 == length x) || (3 == length x))
+                  where xs = group $ sort $ map getValue h
+                        x = head xs
+
+isTwoPairs :: Hand -> Bool
+isTwoPairs h = (3 == length xs) && ((1 == length x) || (2 == length x))
+                  where xs = group $ sort $ map getValue h
+                        x = head xs
+                        
+isOnePair :: Hand -> Bool
+isOnePair h = (4 == length xs) && ((1 == length x) || (2 == length x))
+               where xs = group $ sort $ map getValue h
+                     x = head xs
+                                                
+isHighCard :: Hand -> Bool
+isHighCard h = (5 == length xs)
+               where xs = group $ sort $ map getValue h
+
+isStraight :: Hand -> Bool
+isStraight h = (isHighCard h) && (4 == ((fromEnum $ last xs) - (fromEnum $ head xs))) 
+               where xs = sort $ map getValue h
+
+isStraightFlush :: Hand -> Bool
+isStraightFlush h = (isStraight h) && (isFlush h) 
+
+isRoyalFlush :: Hand -> Bool
+isRoyalFlush h = (isStraight h) && (isFlush h) && (Ten == head xs)
+               where xs = sort $ map getValue h
+                              
 -- "8C TS KC 9H 4S 7D 2S 5D 3S AC"
 readHands :: String -> (Hand, Hand)
 readHands s = (map read $ take 5 ws, map read $ drop 5 ws)
-              where ws = words s
+               where ws = words s
 
 compareHands :: String -> Bool
 compareHands s = let (h1, h2) = readHands s in
-                     h1 > h2
+                     h1 > h2 -- TODO: Implement the rules to compare poker hands
 
+getSuit :: Card -> Suit
+getSuit (C (_ , s)) = s
+
+getValue :: Card -> Value
+getValue (C (v , _)) = v
 
 main = do
     fileContents <- readFile "poker.txt"
