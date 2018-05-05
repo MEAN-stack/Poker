@@ -1,7 +1,21 @@
 import Data.Function
 import Data.List
 
-data Value = Two | Three | Four | Five | Six | Seven | Eight | Nine | Ten | Jack | Queen | King | Ace deriving (Eq, Ord, Bounded, Enum)
+data Value =
+      Two
+    | Three 
+    | Four 
+    | Five 
+    | Six 
+    | Seven 
+    | Eight 
+    | Nine 
+    | Ten 
+    | Jack 
+    | Queen 
+    | King 
+    | Ace 
+    deriving (Eq, Ord, Bounded, Enum)
 
 instance Show Value where
     show Two   = "2"
@@ -20,23 +34,27 @@ instance Show Value where
 
 instance Read Value where
     readsPrec _ (x:xs) = case x of
-                             '2' -> [(Two, xs)]
-                             '3' -> [(Three, xs)]
-                             '4' -> [(Four, xs)]
-                             '5' -> [(Five, xs)]
-                             '6' -> [(Six, xs)]
-                             '7' -> [(Seven, xs)]
-                             '8' -> [(Eight, xs)]
-                             '9' -> [(Nine, xs)]
-                             'T' -> [(Ten, xs)]
-                             'J' -> [(Jack, xs)]
-                             'Q' -> [(Queen, xs)]
-                             'K' -> [(King, xs)]
-                             'A' -> [(Ace, xs)]
-                             _   -> []
+        '2' -> [(Two, xs)]
+        '3' -> [(Three, xs)]
+        '4' -> [(Four, xs)]
+        '5' -> [(Five, xs)]
+        '6' -> [(Six, xs)]
+        '7' -> [(Seven, xs)]
+        '8' -> [(Eight, xs)]
+        '9' -> [(Nine, xs)]
+        'T' -> [(Ten, xs)]
+        'J' -> [(Jack, xs)]
+        'Q' -> [(Queen, xs)]
+        'K' -> [(King, xs)]
+        'A' -> [(Ace, xs)]
+        _   -> []
 
-
-data Suit = Spades | Clubs | Hearts | Diamonds deriving (Eq, Ord, Bounded, Enum)
+data Suit = 
+      Spades 
+    | Clubs 
+    | Hearts 
+    | Diamonds 
+    deriving (Eq, Ord, Bounded, Enum)
 
 instance Show Suit where
     show Spades   = "S"
@@ -46,13 +64,11 @@ instance Show Suit where
 
 instance Read Suit where
     readsPrec _ (x:xs) = case x of
-                             'S' -> [(Spades, xs)]
-                             'C' -> [(Clubs, xs)]
-                             'H' -> [(Hearts, xs)]
-                             'D' -> [(Diamonds, xs)]
-                             _   -> []
-
-
+        'S' -> [(Spades, xs)]
+        'C' -> [(Clubs, xs)]
+        'H' -> [(Hearts, xs)]
+        'D' -> [(Diamonds, xs)]
+        _   -> []
 
 type Card' = (Value, Suit)
 
@@ -62,14 +78,14 @@ instance Show Card where
     show (C (r, s)) = show r ++ show s
 
 instance Read Card where
-    readsPrec _ (xs) =  let readValue x = reads x :: [(Value, String)]
-                            readSuit x = reads x :: [(Suit, String)] in
-                                case readValue xs of
-                                    [] -> []
-                                    (r,ys):_ -> case readSuit ys of
-                                       [] -> []
-                                       (s,zs):_ -> [(C (r,s), zs)]
-
+    readsPrec _ (xs) = 
+        let readValue x = reads x :: [(Value, String)]
+            readSuit  x = reads x :: [(Suit, String)] in
+                case readValue xs of
+                    []       -> []
+                    (r,ys):_ -> case readSuit ys of
+                        []       -> []
+                        (s,zs):_ -> [(C (r,s), zs)]
 
 instance Ord Card where
     compare (C x) (C y) = compare (fst x) (fst y)
@@ -79,16 +95,18 @@ type Hand = [Card]
 -- get the rank of a hand
 -- highCard < onePair < twoPairs < threeOfAKind < straight < flush < fullHouse < fourOfAKind < straightFlush < royalFlush
 
-data Rank = HighCard
-            | OnePair
-            | TwoPairs 
-            | ThreeOfAKind 
-            | Straight 
-            | Flush 
-            | FullHouse 
-            | FourOfAKind 
-            | StraightFlush 
-            | RoyalFlush deriving (Eq, Ord)
+data Rank = 
+      HighCard
+    | OnePair
+    | TwoPairs 
+    | ThreeOfAKind 
+    | Straight 
+    | Flush 
+    | FullHouse 
+    | FourOfAKind 
+    | StraightFlush 
+    | RoyalFlush
+    deriving (Eq, Ord, Show)
 
 rank :: Hand -> Rank
 rank h
@@ -104,28 +122,44 @@ rank h
     | isHighCard h = HighCard
     | otherwise = HighCard
 
+-- compare hands of equal rank
+rank' :: Hand -> [Value]
+rank' h =
+    case rank h of
+        HighCard -> reverse $ sort $ map getValue h
+        _        -> concat $ map nub $ reverse $ sortBy (compare `on` length) $ group $ sort $ map getValue h
+
 isFlush :: Hand -> Bool
-isFlush h = 1 == (length $ nub $ map getSuit h)
+isFlush h =
+    1 == (length $ nub $ map getSuit h)
 
 isFourOfAKind :: Hand -> Bool
-isFourOfAKind h = (2 == length xs) && ((1 == length x) || (4 == length x))
-                  where xs = group $ sort $ map getValue h
-                        x = head xs
+isFourOfAKind h =
+    (2 == length xs) && ((1 == length x) || (4 == length x))
+    where
+        xs = group $ sort $ map getValue h
+        x = head xs
 
 isThreeOfAKind :: Hand -> Bool
-isThreeOfAKind h = (2 == length xs) && ((2 == length x) || (3 == length x))
-                  where xs = group $ sort $ map getValue h
-                        x = head xs
+isThreeOfAKind h = 
+    (3 == length xs) && not (isTwoPairs h)
+    where
+        xs = group $ sort $ map getValue h
 
 isTwoPairs :: Hand -> Bool
-isTwoPairs h = (3 == length xs) && ((1 == length x) || (2 == length x))
-                  where xs = group $ sort $ map getValue h
-                        x = head xs
+isTwoPairs h =
+    (3 == length xs) && (x /= 3) && (y /= 3)
+    where
+        xs = group $ sort $ map getValue h
+        x = length $ head xs
+        y = length $ last xs
                         
 isOnePair :: Hand -> Bool
-isOnePair h = (4 == length xs) && ((1 == length x) || (2 == length x))
-               where xs = group $ sort $ map getValue h
-                     x = head xs
+isOnePair h =
+    (4 == length xs) && ((1 == length x) || (2 == length x))
+    where
+        xs = group $ sort $ map getValue h
+        x = head xs
                                                 
 isHighCard :: Hand -> Bool
 isHighCard h = (5 == length xs)
@@ -134,6 +168,11 @@ isHighCard h = (5 == length xs)
 isStraight :: Hand -> Bool
 isStraight h = (isHighCard h) && (4 == ((fromEnum $ last xs) - (fromEnum $ head xs))) 
                where xs = sort $ map getValue h
+
+isFullHouse :: Hand -> Bool
+isFullHouse h = (2 == length xs) && ((2 == length x) || (3 == length x))
+                  where xs = group $ sort $ map getValue h
+                        x = head xs
 
 isStraightFlush :: Hand -> Bool
 isStraightFlush h = (isStraight h) && (isFlush h) 
@@ -148,8 +187,11 @@ readHands s = (map read $ take 5 ws, map read $ drop 5 ws)
                where ws = words s
 
 compareHands :: String -> Bool
-compareHands s = let (h1, h2) = readHands s in
-                     h1 > h2 -- TODO: Implement the rules to compare poker hands
+compareHands s
+    | (rank h1 > rank h2) = True
+    | (rank h1 < rank h2) = False
+    | otherwise = if (rank' h1 > rank' h2) then True else False
+    where (h1, h2) = readHands s
 
 getSuit :: Card -> Suit
 getSuit (C (_ , s)) = s
