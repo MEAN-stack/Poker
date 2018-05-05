@@ -1,6 +1,9 @@
 import Data.Function
 import Data.List
 
+--
+-- Card values
+--
 data Value =
       Two
     | Three 
@@ -17,20 +20,24 @@ data Value =
     | Ace 
     deriving (Eq, Ord, Bounded, Enum)
 
+--
+-- We provide our own implementation of read and show
+--
 instance Show Value where
-    show Two   = "2"
-    show Three = "3"
-    show Four  = "4"
-    show Five  = "5"
-    show Six   = "6"
-    show Seven = "7"
-    show Eight = "8"
-    show Nine  = "9"
-    show Ten   = "T"
-    show Jack  = "J"
-    show Queen = "Q"
-    show King  = "K"
-    show Ace   = "A"
+    show v = case v of
+        Two   -> "2"
+        Three -> "3"
+        Four  -> "4"
+        Five  -> "5"
+        Six   -> "6"
+        Seven -> "7"
+        Eight -> "8"
+        Nine  -> "9"
+        Ten   -> "T"
+        Jack  -> "J"
+        Queen -> "Q"
+        King  -> "K"
+        Ace   -> "A"
 
 instance Read Value where
     readsPrec _ (x:xs) = case x of
@@ -49,6 +56,9 @@ instance Read Value where
         'A' -> [(Ace, xs)]
         _   -> []
 
+--
+-- Card suits
+--
 data Suit = 
       Spades 
     | Clubs 
@@ -70,12 +80,17 @@ instance Read Suit where
         'D' -> [(Diamonds, xs)]
         _   -> []
 
+--
+-- a Card is a value-suit pair
+-- we need to wrap it in a constructor C
+-- so that we can make it an instance of Read, Show and Ord 
+--
 type Card' = (Value, Suit)
 
 newtype Card = C Card' deriving (Eq)
 
 instance Show Card where
-    show (C (r, s)) = show r ++ show s
+    show (C (v, s)) = show v ++ show s
 
 instance Read Card where
     readsPrec _ (xs) = 
@@ -83,18 +98,25 @@ instance Read Card where
             readSuit  x = reads x :: [(Suit, String)] in
                 case readValue xs of
                     []       -> []
-                    (r,ys):_ -> case readSuit ys of
+                    (v,ys):_ -> case readSuit ys of
                         []       -> []
-                        (s,zs):_ -> [(C (r,s), zs)]
+                        (s,zs):_ -> [(C (v,s), zs)]
 
+--
+-- sort cards based on value
+--
 instance Ord Card where
-    compare (C x) (C y) = compare (fst x) (fst y)
+    compare (C a) (C b) = compare (fst a) (fst b)
 
+--
+-- a hand is a list of 5 Cards
+--
 type Hand = [Card]
 
+--
 -- get the rank of a hand
 -- highCard < onePair < twoPairs < threeOfAKind < straight < flush < fullHouse < fourOfAKind < straightFlush < royalFlush
-
+--
 data Rank = 
       HighCard
     | OnePair
@@ -110,24 +132,38 @@ data Rank =
 
 rank :: Hand -> Rank
 rank h
-    | isRoyalFlush h = RoyalFlush
+    | isRoyalFlush    h = RoyalFlush
     | isStraightFlush h = StraightFlush
-    | isFourOfAKind h = FourOfAKind
-    | isFullHouse h = FullHouse
-    | isFlush h = Flush
-    | isStraight h = Straight
-    | isThreeOfAKind h = ThreeOfAKind
-    | isTwoPairs h = TwoPairs
-    | isOnePair h = OnePair
-    | isHighCard h = HighCard
-    | otherwise = HighCard
+    | isFourOfAKind h   = FourOfAKind
+    | isFullHouse h     = FullHouse
+    | isFlush h         = Flush
+    | isStraight h      = Straight
+    | isThreeOfAKind h  = ThreeOfAKind
+    | isTwoPairs h      = TwoPairs
+    | isOnePair h       = OnePair
+    | isHighCard h      = HighCard
+    | otherwise         = HighCard
 
--- compare hands of equal rank
+--
+-- to compare hands of equal rank
+-- we produce a list of card values
+-- values of FourOfAKinds, ThreeOfAKinds, Pairs first, then decreasing single card values
+-- 
+-- e.g.
+-- [K,Q,J,J,Q] -> [Q,J K]
+-- [T,8,A,7,T] -> [T,A,8,7]
+--
 rank' :: Hand -> [Value]
 rank' h =
     case rank h of
+        -- high card hands are straightforward
         HighCard -> reverse $ sort $ map getValue h
+
+        -- for other hands we sort the values, then group them,
+        -- then sort the groups by length and then reverse (so FourOfAKinds come first, etc)
+        -- finally remove duplicates from each group, and flatten the list
         _        -> concat $ map nub $ reverse $ sortBy (compare `on` length) $ group $ sort $ map getValue h
+
 
 isFlush :: Hand -> Bool
 isFlush h =
@@ -148,11 +184,10 @@ isThreeOfAKind h =
 
 isTwoPairs :: Hand -> Bool
 isTwoPairs h =
-    (3 == length xs) && (x /= 3) && (y /= 3)
+    (3 == length xs) && (x /= 3)
     where
-        xs = group $ sort $ map getValue h
-        x = length $ head xs
-        y = length $ last xs
+        xs = sortBy (compare `on` length) $ group $ sort $ map getValue h
+        x = length $ last xs
                         
 isOnePair :: Hand -> Bool
 isOnePair h =
